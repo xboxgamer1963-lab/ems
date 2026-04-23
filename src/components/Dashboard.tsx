@@ -1,12 +1,12 @@
 'use client';
 
-import { 
-  Users, 
-  Zap, 
-  Clock, 
-  Wallet, 
-  TrendingUp, 
-  FileText, 
+import {
+  Users,
+  Zap,
+  Clock,
+  Wallet,
+  TrendingUp,
+  FileText,
   Sparkles,
   ArrowRight,
   CheckCircle2,
@@ -35,17 +35,19 @@ import { useAuth } from '@/providers/AuthProvider';
 import Header from '@/components/Header';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import AttendanceTrends from '@/components/AttendanceTrends';
+import { useOrgSettings } from '@/providers/OrgSettingsProvider';
 
 // --- ADMIN DASHBOARD ---
 function AdminDashboard({ firstName }: { firstName: string }) {
   const { profile } = useAuth();
+  const { settings } = useOrgSettings();
   const [statsData, setStatsData] = useState({
     totalEmployees: 0,
     activeNow: 0,
     pendingLeaves: 0,
     monthlyPayroll: 0,
   });
-  const [weekAttendance, setWeekAttendance] = useState<{ day: string; count: number; total: number; active?: boolean }[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -100,34 +102,6 @@ function AdminDashboard({ firstName }: { firstName: string }) {
         pendingLeaves: leaveCount || 0,
         monthlyPayroll: Math.round(monthlyPayroll),
       });
-
-      // 5. Attendance trend — current week (Mon-Sun)
-      const now = new Date();
-      const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon,...
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
-
-      const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const weekDates = weekDays.map((_, i) => {
-        const d = new Date(monday);
-        d.setDate(monday.getDate() + i);
-        return d.toLocaleDateString('en-CA');
-      });
-
-      const { data: attendanceData } = await supabase
-        .from('attendance')
-        .select('date')
-        .eq('organization_id', orgId)
-        .gte('date', weekDates[0])
-        .lte('date', weekDates[6]);
-
-      const todayDayIndex = (dayOfWeek + 6) % 7; // 0=Mon
-      const weekStats = weekDays.map((day, i) => {
-        const count = attendanceData?.filter(a => a.date === weekDates[i]).length || 0;
-        return { day, count, total: empCount || 1, active: i === todayDayIndex };
-      });
-      setWeekAttendance(weekStats);
 
       // 6. Recent activity — latest 3 leaves + newest employee
       const { data: recentLeaves } = await supabase
@@ -224,7 +198,7 @@ function AdminDashboard({ firstName }: { firstName: string }) {
     },
     {
       label: 'Monthly Payroll',
-      value: statsLoading ? '—' : `$${statsData.monthlyPayroll.toLocaleString()}`,
+      value: statsLoading ? '—' : `${settings?.currency_symbol || '$'}${statsData.monthlyPayroll.toLocaleString()}`,
       change: 'This month' as string | undefined,
       trend: 'up' as const,
       status: undefined as string | undefined,
@@ -233,7 +207,7 @@ function AdminDashboard({ firstName }: { firstName: string }) {
     },
   ];
 
-  const maxAttendance = Math.max(...weekAttendance.map(d => d.count), 1);
+
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-fade-in py-8 px-8 w-full">
@@ -255,9 +229,8 @@ function AdminDashboard({ firstName }: { firstName: string }) {
                 </span>
               )}
               {stat.status && (
-                <span className={`text-[10px] font-black px-2 py-1 rounded-full ${
-                  stat.status === 'LIVE' ? 'bg-emerald-100 text-emerald-700 animate-pulse' : 'bg-amber-100 text-amber-700'
-                }`}>
+                <span className={`text-[10px] font-black px-2 py-1 rounded-full ${stat.status === 'LIVE' ? 'bg-emerald-100 text-emerald-700 animate-pulse' : 'bg-amber-100 text-amber-700'
+                  }`}>
                   {stat.status}
                 </span>
               )}
@@ -273,52 +246,8 @@ function AdminDashboard({ firstName }: { firstName: string }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-50">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h4 className="text-xl font-black text-slate-900 tracking-tight mb-1">Attendance Trends</h4>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Check-ins per day — current week</p>
-            </div>
-            <div className="flex gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-              <button className="px-5 py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Daily</button>
-              <button className="px-5 py-2 bg-white text-primary rounded-lg text-xs font-black uppercase tracking-widest shadow-sm">Weekly</button>
-            </div>
-          </div>
-
-          <div className="h-64 flex items-end justify-between gap-6 pt-10">
-            {weekAttendance.length === 0
-              ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, i) => (
-                  <div key={day} className="flex-1 flex flex-col items-center gap-4">
-                    <div className="w-full bg-slate-100 rounded-xl h-full animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{day}</span>
-                  </div>
-                ))
-              : weekAttendance.map((d) => {
-                  const pct = Math.round((d.count / maxAttendance) * 100);
-                  const heightPct = `${Math.max(pct, 4)}%`;
-                  return (
-                    <div key={d.day} className="flex-1 flex flex-col items-center gap-4 group">
-                      <div className="w-full bg-slate-50 rounded-xl h-full relative overflow-hidden">
-                        <div
-                          className={`absolute bottom-0 w-full transition-all duration-700 ease-out rounded-xl ${
-                            d.active ? 'bg-primary' : 'bg-primary/20 group-hover:bg-primary/40'
-                          }`}
-                          style={{ height: heightPct }}
-                        />
-                        {d.count > 0 && (
-                          <span className="absolute bottom-2 left-0 right-0 text-center text-[9px] font-black text-white/90 tabular-nums">
-                            {d.count}
-                          </span>
-                        )}
-                      </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${
-                        d.active ? 'text-primary' : 'text-slate-400'
-                      }`}>{d.day}</span>
-                    </div>
-                  );
-                })
-            }
-          </div>
+        <div className="lg:col-span-2">
+          <AttendanceTrends organizationId={profile?.organization_id || ''} totalEmployees={statsData.totalEmployees} />
         </div>
 
         <div className="bg-white p-8 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-50 overflow-hidden">
@@ -328,7 +257,7 @@ function AdminDashboard({ firstName }: { firstName: string }) {
           </div>
           <div className="space-y-8">
             {statsLoading ? (
-              [1,2,3].map(i => (
+              [1, 2, 3].map(i => (
                 <div key={i} className="flex gap-4">
                   <div className="w-12 h-12 rounded-full bg-slate-100 animate-pulse flex-shrink-0" />
                   <div className="flex-1 space-y-2">
@@ -387,6 +316,8 @@ function AdminDashboard({ firstName }: { firstName: string }) {
 
 // --- HR DASHBOARD ---
 function HRDashboard() {
+  const { profile: hrProfile } = useAuth();
+  const { settings } = useOrgSettings();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -398,13 +329,14 @@ function HRDashboard() {
       const { data, error } = await supabase
         .from('leaves')
         .select('*, profile:profiles(id, full_name, annual_leave_balance, sick_leave_balance, personal_leave_balance)')
+        .eq('organization_id', hrProfile?.organization_id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.error('SYNC HR: Error fetching leaves:', error);
       }
-      
+
       if (data) {
         console.log('SYNC HR: Pending requests found:', data.length);
         setRequests(data);
@@ -423,7 +355,7 @@ function HRDashboard() {
   const handleAction = async (id: string, status: 'approved' | 'rejected', type: string, userId: string, startDate: string, endDate: string) => {
     try {
       setActionId(id);
-      
+
       const { error } = await supabase
         .from('leaves')
         .update({ status })
@@ -436,7 +368,7 @@ function HRDashboard() {
         const start = new Date(startDate);
         const end = new Date(endDate);
         const days = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-        
+
         let field = '';
         if (type === 'annual') field = 'annual_leave_balance';
         else if (type === 'sick') field = 'sick_leave_balance';
@@ -445,7 +377,7 @@ function HRDashboard() {
         if (field) {
           const profile = requests.find(r => r.id === id)?.profile;
           const currentBalance = profile ? profile[field] : 0;
-          
+
           await supabase
             .from('profiles')
             .update({ [field]: currentBalance + days })
@@ -462,7 +394,6 @@ function HRDashboard() {
   };
 
   const [totalEmployees, setTotalEmployees] = useState<number | null>(null);
-  const { profile: hrProfile } = useAuth();
 
   useEffect(() => {
     if (hrProfile?.organization_id) {
@@ -589,19 +520,19 @@ function HRDashboard() {
                       <p className="text-xs font-bold text-slate-500">{new Date(l.start_date).toLocaleDateString()} - {new Date(l.end_date).toLocaleDateString()}</p>
                     </td>
                     <td className="px-8 py-5 text-right space-x-2">
-                       <button 
+                      <button
                         onClick={() => handleAction(l.id, 'approved', l.leave_type, l.profile.id, l.start_date, l.end_date)}
                         disabled={actionId === l.id}
                         className="btn bg-emerald-50 text-emerald-600 px-4 py-2 hover:bg-emerald-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest"
                       >
                         {actionId === l.id ? <Loader2 className="animate-spin" size={14} /> : 'Approve'}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleAction(l.id, 'rejected', l.leave_type, l.profile.id, l.start_date, l.end_date)}
                         disabled={actionId === l.id}
-                         className="btn bg-red-50 text-red-600 px-4 py-2 hover:bg-red-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest"
+                        className="btn bg-red-50 text-red-600 px-4 py-2 hover:bg-red-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest"
                       >
-                         {actionId === l.id ? <Loader2 className="animate-spin" size={14} /> : 'Reject'}
+                        {actionId === l.id ? <Loader2 className="animate-spin" size={14} /> : 'Reject'}
                       </button>
                     </td>
                   </tr>
@@ -625,6 +556,7 @@ function HRDashboard() {
 // --- EMPLOYEE DASHBOARD ---
 function EmployeeDashboard({ firstName }: { firstName: string }) {
   const { profile } = useAuth();
+  const { settings } = useOrgSettings();
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   const [status, setStatus] = useState<'off' | 'active' | 'break'>('off');
   const [session, setSession] = useState<any>(null);
@@ -657,7 +589,7 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
       setLoading(true);
       const today = getLocalDate();
       console.log('SYNC: Today is', today);
-      
+
       const { data, error } = await supabase
         .from('attendance')
         .select('*')
@@ -744,18 +676,34 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
       setLoading(true);
       const now = new Date();
       const today = getLocalDate();
-      const isLate = now.getHours() >= 9 && now.getMinutes() > 0;
-      
+
+      // Calculate if late based on Org Settings
+      let isLate = false;
+      if (settings?.work_start_time) {
+        const [startH, startM] = settings.work_start_time.split(':').map(Number);
+        const threshold = settings.late_threshold_mins || 0;
+
+        const checkTime = new Date();
+        checkTime.setHours(startH, startM + threshold, 0, 0);
+
+        if (now > checkTime) {
+          isLate = true;
+        }
+      } else {
+        // Fallback to 9:00 AM
+        isLate = now.getHours() >= 9 && now.getMinutes() > 0;
+      }
+
       console.log('SYNC: Clock In triggering for', today, 'at', now.toISOString());
-      
+
       let result: any;
       if (session) {
         console.log('SYNC: Updating existing session', session.id);
         result = await supabase
           .from('attendance')
-          .update({ 
+          .update({
             check_out: null,
-            status: isLate ? 'late' : 'present' 
+            status: isLate ? 'late' : 'present'
           })
           .eq('id', session.id)
           .select()
@@ -779,7 +727,7 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
         console.error('SYNC: DB Error during clock-in:', result.error);
         throw result.error;
       }
-      
+
       if (result.data) {
         console.log('SYNC: Operation successful!', result.data);
         setSession(result.data);
@@ -829,9 +777,9 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
 
       const { data, error } = await supabase
         .from('attendance')
-        .update({ 
+        .update({
           break_start: null,
-          total_break_seconds: newTotalBreak 
+          total_break_seconds: newTotalBreak
         })
         .eq('id', session.id)
         .select()
@@ -952,14 +900,14 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
               {status === 'active' || (status === 'off' && session?.check_out) ? elapsed : time}
             </p>
             <p className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">
-              {status === 'off' && !session ? 'Not clocked in' : 
-               status === 'off' && session?.check_out ? 'Work day ended' :
-               `Logged in at ${new Date(session.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+              {status === 'off' && !session ? 'Not clocked in' :
+                status === 'off' && session?.check_out ? 'Work day ended' :
+                  `Logged in at ${new Date(session.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
             </p>
           </div>
           <div className="mt-10 space-y-3">
             {status === 'off' ? (
-              <button 
+              <button
                 onClick={handleClockIn}
                 disabled={loading}
                 className="w-full py-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50 disabled:translate-y-0"
@@ -968,14 +916,14 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
               </button>
             ) : (
               <>
-                <button 
+                <button
                   onClick={handleClockOut}
                   disabled={loading}
                   className="w-full py-4 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : 'Clock Out (Finish Day)'}
                 </button>
-                <button 
+                <button
                   onClick={status === 'active' ? handleBreak : handleResume}
                   disabled={loading}
                   className="w-full py-4 rounded-2xl bg-slate-50 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
@@ -1011,10 +959,9 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
               {recentLeaves.length > 0 && (
                 <div className="flex -space-x-2">
                   {recentLeaves.map((rl, i) => (
-                    <div key={rl.id} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                      rl.status === 'approved' ? 'bg-emerald-500 text-white' : 
+                    <div key={rl.id} className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black uppercase tracking-widest shadow-sm ${rl.status === 'approved' ? 'bg-emerald-500 text-white' :
                       rl.status === 'rejected' ? 'bg-red-500 text-white' : 'bg-amber-500 text-white'
-                    }`} title={`${rl.leave_type}: ${rl.status}`}>
+                      }`} title={`${rl.leave_type}: ${rl.status}`}>
                       {rl.leave_type.charAt(0)}
                     </div>
                   ))}
@@ -1054,10 +1001,10 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">My Annual Salary</p>
                   <h2 className="text-5xl font-black text-slate-900 tracking-tighter">
-                    ${Number(profile.salary).toLocaleString()}
+                    {settings?.currency_symbol || '$'}{Number(profile.salary).toLocaleString()}
                   </h2>
                   <p className="text-sm font-bold text-primary mt-1">
-                    ${Math.round(Number(profile.salary) / 12).toLocaleString()}
+                    {settings?.currency_symbol || '$'}{Math.round(Number(profile.salary) / 12).toLocaleString()}
                     <span className="text-slate-400 font-medium"> / month (gross)</span>
                   </p>
                 </div>
@@ -1121,14 +1068,13 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Payment date: {p.payment_date || 'N/A'}</p>
                     </td>
                     <td className="px-8 py-6">
-                      <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        p.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
+                      <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
                         {p.status}
                       </span>
                     </td>
                     <td className="px-8 py-6">
-                      <p className="text-sm font-black text-slate-900">${p.net_pay?.toLocaleString()}</p>
+                      <p className="text-sm font-black text-slate-900">{settings?.currency_symbol || '$'}{p.net_pay?.toLocaleString()}</p>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button className="text-primary font-black text-xs uppercase tracking-widest hover:underline">View Details</button>

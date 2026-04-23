@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { OrgSettingsProvider } from "@/providers/OrgSettingsProvider";
 import AuthWrapper from "@/components/AuthWrapper";
 import ClientLayout from "@/components/ClientLayout";
 
@@ -29,9 +30,11 @@ export default function RootLayout({
       </head>
       <body className="font-body-md text-on-background antialiased bg-background">
         <AuthProvider>
-          <AuthWrapper>
-            <ClientLayout>{children}</ClientLayout>
-          </AuthWrapper>
+          <OrgSettingsProvider>
+            <AuthWrapper>
+              <ClientLayout>{children}</ClientLayout>
+            </AuthWrapper>
+          </OrgSettingsProvider>
         </AuthProvider>
       </body>
     </html>

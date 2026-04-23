@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Clock, 
-  TrendingUp, 
-  Calendar, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Users,
+  Clock,
+  TrendingUp,
+  Calendar,
+  CreditCard,
   Settings,
   HelpCircle,
-  Plus
+  Plus,
+  ShieldCheck
 } from 'lucide-react';
 
 import { useAuth } from '@/providers/AuthProvider';
@@ -19,12 +20,14 @@ import { useAuth } from '@/providers/AuthProvider';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/', roles: ['admin', 'hr', 'employee'] },
   { icon: Users, label: 'Employee Directory', href: '/employees', roles: ['admin', 'hr'] },
-  { icon: Users, label: 'HR Managers', href: '/hr-managers', roles: ['admin'] },
+  //{ icon: Calendar, label: 'Recruitment', href: '/recruitment', roles: ['admin', 'hr'] },
+  // { icon: TrendingUp, label: 'Performance', href: '/performance', roles: ['admin', 'hr', 'employee'] },
+  //{ icon: Clock, label: 'Scheduling', href: '/scheduling', roles: ['admin', 'hr', 'employee'] },
   { icon: Clock, label: 'Attendance', href: '/attendance', roles: ['admin', 'hr', 'employee'] },
   { icon: Calendar, label: 'Leaves', href: '/leaves', roles: ['admin', 'hr', 'employee'] },
   { icon: TrendingUp, label: 'Reports', href: '/reports', roles: ['admin', 'hr'] },
+  { icon: ShieldCheck, label: 'Compliance', href: '/compliance', roles: ['admin'] },
   { icon: CreditCard, label: 'Payroll', href: '/payroll', roles: ['admin', 'employee'] },
-  { icon: CreditCard, label: 'Admin Console', href: '/admin', roles: ['admin'] },
 ];
 
 export default function Sidebar() {
@@ -51,20 +54,19 @@ export default function Sidebar() {
             // Actually let's look at the navItems again.
           }
           return (
-            <Link 
-              key={item.href} 
+            <Link
+              key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-all duration-200 hover:translate-x-1 ${
-                isActive 
-                  ? 'bg-primary/5 text-primary border-r-4 border-primary' 
-                  : 'text-slate-500 hover:bg-slate-50'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-all duration-200 hover:translate-x-1 ${isActive
+                ? 'bg-primary/5 text-primary border-r-4 border-primary'
+                : 'text-slate-500 hover:bg-slate-50'
+                }`}
             >
               <item.icon size={20} className={isActive ? 'text-primary' : 'text-slate-400'} />
               <span className="text-sm font-bold tracking-tight">
-                {role === 'employee' && item.label === 'Leaves' ? 'My Leaves' : 
-                 role === 'employee' && item.label === 'Admin Console' ? 'My Payroll' : // We should probably have a separate Payroll item for employees
-                 item.label}
+                {role === 'employee' && item.label === 'Leaves' ? 'My Leaves' :
+                  role === 'employee' && item.label === 'Admin Console' ? 'My Payroll' : // We should probably have a separate Payroll item for employees
+                    item.label}
               </span>
             </Link>
           );
@@ -72,14 +74,14 @@ export default function Sidebar() {
       </nav>
 
       <div className="mt-auto space-y-1">
-        <Link 
+        <Link
           href="/settings"
           className="flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-lg font-bold transition-all duration-200 hover:translate-x-1"
         >
           <Settings size={20} className="text-slate-400" />
           <span className="text-sm font-bold tracking-tight">Settings</span>
         </Link>
-        <button 
+        <button
           className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-lg font-bold transition-all duration-200 hover:translate-x-1"
         >
           <HelpCircle size={20} className="text-slate-400" />

@@ -1,6 +1,9 @@
 'use client';
 
 import { useAuth } from '@/providers/AuthProvider';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { 
   Search, 
   Bell, 
@@ -11,6 +14,37 @@ import {
 
 export default function Header({ title }: { title?: string }) {
   const { profile, signOut } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (profile?.id) {
+      fetchUnreadCount();
+      
+      const channel = supabase
+        .channel('notifications_count')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${profile.id}`
+        }, () => {
+          fetchUnreadCount();
+        })
+        .subscribe();
+        
+      return () => { supabase.removeChannel(channel); };
+    }
+  }, [profile?.id]);
+
+  async function fetchUnreadCount() {
+    const { count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', profile?.id)
+      .eq('is_read', false);
+    
+    setUnreadCount(count || 0);
+  }
 
   return (
     <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 flex justify-between items-center px-8 h-16 transition-all duration-300">
@@ -29,10 +63,12 @@ export default function Header({ title }: { title?: string }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="hover:bg-slate-100 rounded-full p-2.5 transition-colors duration-200 relative group">
+        <Link href="/notifications" className="hover:bg-slate-100 rounded-full p-2.5 transition-colors duration-200 relative group">
           <Bell size={20} className="text-slate-600" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-red-500"></span>
-        </button>
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-red-500 animate-pulse"></span>
+          )}
+        </Link>
         <button className="hidden sm:block hover:bg-slate-100 rounded-full p-2.5 transition-colors duration-200">
           <MessageSquare size={20} className="text-slate-600" />
         </button>

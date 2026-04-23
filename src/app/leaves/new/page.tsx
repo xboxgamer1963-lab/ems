@@ -5,12 +5,11 @@ import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { 
-  Calendar, 
-  ChevronRight, 
-  Info, 
-  UploadFile, 
-  CheckCircle2, 
+import {
+  Calendar,
+  ChevronRight,
+  Info,
+  CheckCircle2,
   AlertCircle,
   Loader2,
   CalendarDays,
@@ -86,7 +85,7 @@ export default function ApplyLeavePage() {
           .from('profiles')
           .update({ [balanceField]: currentBalance - diffDays })
           .eq('id', profile.id);
-        
+
         if (profileError) throw profileError;
       }
 
@@ -139,10 +138,10 @@ export default function ApplyLeavePage() {
               <div className="flex flex-col gap-3">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-900">Leave Type</label>
                 <div className="relative">
-                  <select 
+                  <select
                     required
                     value={formData.leave_type}
-                    onChange={(e) => setFormData({...formData, leave_type: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, leave_type: e.target.value })}
                     className="w-full appearance-none bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   >
                     <option value="" disabled>Select leave type</option>
@@ -170,10 +169,10 @@ export default function ApplyLeavePage() {
               <div className="flex flex-col gap-3">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-900">Start Date</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type="date" required
                     value={formData.start_date}
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                     className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   />
                   <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
@@ -183,10 +182,10 @@ export default function ApplyLeavePage() {
               <div className="flex flex-col gap-3">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-900">End Date</label>
                 <div className="relative">
-                  <input 
+                  <input
                     type="date" required
                     value={formData.end_date}
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                     className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   />
                   <CheckCircle2 className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
@@ -197,11 +196,11 @@ export default function ApplyLeavePage() {
             {/* Reason */}
             <div className="flex flex-col gap-3">
               <label className="text-xs font-black uppercase tracking-widest text-slate-900">Reason for Leave</label>
-              <textarea 
+              <textarea
                 required
                 rows={4}
                 value={formData.reason}
-                onChange={(e) => setFormData({...formData, reason: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 placeholder="Briefly explain the reason for your leave request..."
                 className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none"
               />
@@ -223,15 +222,15 @@ export default function ApplyLeavePage() {
 
             {/* Submit */}
             <div className="flex items-center justify-end gap-6 pt-10 border-t border-slate-50">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => router.back()}
                 className="px-8 py-3 rounded-xl font-black text-xs text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-all"
               >
                 Cancel
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="px-10 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all active:scale-95 disabled:opacity-50"
               >

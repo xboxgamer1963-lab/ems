@@ -195,6 +195,18 @@
   body:has(.auth-layout) .main-content-wrapper {
     @apply p-0;
   }
+
+  .settings-input {
+    @apply w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 transition-all outline-none;
+  }
+
+  .settings-input:focus {
+    @apply border-primary bg-white ring-2 ring-primary/10;
+  }
+
+  .settings-input::placeholder {
+    @apply text-slate-400 font-medium;
+  }
 }
 
 @layer utilities {

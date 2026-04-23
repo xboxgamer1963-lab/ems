@@ -44,6 +44,7 @@ export default function EmployeesPage() {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
+      .eq('organization_id', profile?.organization_id)
       .order('full_name', { ascending: true });
 
     if (!error && data) {
