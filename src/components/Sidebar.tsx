@@ -20,9 +20,9 @@ import { useAuth } from '@/providers/AuthProvider';
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/', roles: ['admin', 'hr', 'employee'] },
   { icon: Users, label: 'Employee Directory', href: '/employees', roles: ['admin', 'hr'] },
-  //{ icon: Calendar, label: 'Recruitment', href: '/recruitment', roles: ['admin', 'hr'] },
-  // { icon: TrendingUp, label: 'Performance', href: '/performance', roles: ['admin', 'hr', 'employee'] },
-  //{ icon: Clock, label: 'Scheduling', href: '/scheduling', roles: ['admin', 'hr', 'employee'] },
+  { icon: Users, label: 'Recruitment', href: '/recruitment', roles: ['admin', 'hr'], comingSoon: true },
+  { icon: TrendingUp, label: 'Performance', href: '/performance', roles: ['admin', 'hr', 'employee'], comingSoon: true },
+  { icon: Clock, label: 'Scheduling', href: '/scheduling', roles: ['admin', 'hr', 'employee'], comingSoon: true },
   { icon: Clock, label: 'Attendance', href: '/attendance', roles: ['admin', 'hr', 'employee'] },
   { icon: Calendar, label: 'Leaves', href: '/leaves', roles: ['admin', 'hr', 'employee'] },
   { icon: TrendingUp, label: 'Reports', href: '/reports', roles: ['admin', 'hr'] },
@@ -44,7 +44,7 @@ export default function Sidebar() {
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest leading-none mt-1">Enterprise Management</p>
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto pr-1 pb-4">
         {filteredItems.map((item) => {
           const isActive = pathname === item.href;
           let label = item.label;
@@ -57,17 +57,22 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg font-bold transition-all duration-200 hover:translate-x-1 ${isActive
+              className={`flex items-center justify-between px-4 py-3 rounded-lg font-bold transition-all duration-200 hover:translate-x-1 ${isActive
                 ? 'bg-primary/5 text-primary border-r-4 border-primary'
                 : 'text-slate-500 hover:bg-slate-50'
                 }`}
             >
-              <item.icon size={20} className={isActive ? 'text-primary' : 'text-slate-400'} />
-              <span className="text-sm font-bold tracking-tight">
-                {role === 'employee' && item.label === 'Leaves' ? 'My Leaves' :
-                  role === 'employee' && item.label === 'Admin Console' ? 'My Payroll' : // We should probably have a separate Payroll item for employees
-                    item.label}
-              </span>
+              <div className="flex items-center gap-3">
+                <item.icon size={20} className={isActive ? 'text-primary' : 'text-slate-400'} />
+                <span className="text-sm font-bold tracking-tight">
+                  {role === 'employee' && item.label === 'Leaves' ? 'My Leaves' :
+                    role === 'employee' && item.label === 'Admin Console' ? 'My Payroll' : // We should probably have a separate Payroll item for employees
+                      item.label}
+                </span>
+              </div>
+              {item.comingSoon && (
+                <span className="text-[8px] font-black uppercase tracking-widest bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">Soon</span>
+              )}
             </Link>
           );
         })}

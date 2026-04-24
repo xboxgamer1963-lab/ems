@@ -681,7 +681,7 @@ function EmployeeDashboard({ firstName }: { firstName: string }) {
       let isLate = false;
       if (settings?.work_start_time) {
         const [startH, startM] = settings.work_start_time.split(':').map(Number);
-        const threshold = settings.late_threshold_mins || 0;
+        const threshold = settings.late_threshold_minutes || 0;
 
         const checkTime = new Date();
         checkTime.setHours(startH, startM + threshold, 0, 0);

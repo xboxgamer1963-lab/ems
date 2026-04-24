@@ -30,9 +30,15 @@ export default function SignupPage() {
 
       if (authError) throw authError;
       if (!authData.user) throw new Error('Signup failed');
+      if (authData.user.identities && authData.user.identities.length === 0) {
+        throw new Error('This email is already registered. Please log in instead.');
+      }
 
       // Create organization
-      const slug = formData.orgName.toLowerCase().replace(/\s+/g, '-');
+      const baseSlug = formData.orgName.toLowerCase().replace(/\s+/g, '-');
+      const uniqueSuffix = Date.now().toString(36);
+      const slug = `${baseSlug}-${uniqueSuffix}`;
+
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .insert({ name: formData.orgName, slug })
